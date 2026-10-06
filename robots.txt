@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /.htaccess
+Disallow: /.env
+Disallow: /tmp/
+Disallow: /logs/
+
