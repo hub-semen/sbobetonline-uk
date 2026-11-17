@@ -1,10 +1,14 @@
 /**
  * HTML landing from Worker assets; WordPress paths proxied to Cloudways.
  *
- * Requires DNS (DNS only / grey cloud):
- *   origin.sbobetonline.co.uk  A  164.92.207.251
+ * DNS (required):
+ *   @ / www     → 164.92.207.251  Proxied (orange)
+ *   origin      → 164.92.207.251  DNS only (grey)
  *
- * Do NOT fetch the orange-cloud apex or a raw IP + Host (causes 526 / 1003).
+ * Cloudways (required):
+ *   Domain Management → add alias: origin.sbobetonline.co.uk
+ *   SSL Certificate → Let's Encrypt for origin.sbobetonline.co.uk
+ *   (Workers cannot reliably override Host; origin hostname must be mapped.)
  */
 
 const ORIGIN_HOST = "origin.sbobetonline.co.uk";
@@ -44,13 +48,16 @@ export default {
 
     if (isWordPress(url.pathname)) {
       const originUrl = new URL(request.url);
-      originUrl.protocol = "http:";
+      // Requires Let's Encrypt (or other) cert for origin.sbobetonline.co.uk on Cloudways
+      originUrl.protocol = "https:";
       originUrl.hostname = ORIGIN_HOST;
 
       const headers = new Headers(request.headers);
-      headers.set("Host", PUBLIC_HOST);
+      // Host will be origin.sbobetonline.co.uk (Workers set this from the URL).
+      // That hostname MUST be added in Cloudways Domain Management.
       headers.set("X-Forwarded-Proto", "https");
       headers.set("X-Forwarded-Host", PUBLIC_HOST);
+      headers.set("X-Forwarded-For", request.headers.get("CF-Connecting-IP") || "");
       headers.delete("cf-connecting-ip");
       headers.delete("cf-ray");
       headers.delete("cf-visitor");
