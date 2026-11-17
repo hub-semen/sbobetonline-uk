@@ -1,11 +1,13 @@
 /**
  * HTML landing from Worker assets; WordPress paths proxied to Cloudways.
  *
- * Proxies over HTTP to the origin IP with Host + X-Forwarded-Proto
- * so Cloudways does not 301-loop and we avoid Error 526 (bad origin cert).
+ * Requires DNS (DNS only / grey cloud):
+ *   origin.sbobetonline.co.uk  A  164.92.207.251
+ *
+ * Do NOT fetch the orange-cloud apex or a raw IP + Host (causes 526 / 1003).
  */
 
-const ORIGIN_IP = "164.92.207.251";
+const ORIGIN_HOST = "origin.sbobetonline.co.uk";
 const PUBLIC_HOST = "sbobetonline.co.uk";
 
 const WP_PREFIXES = [
@@ -43,7 +45,7 @@ export default {
     if (isWordPress(url.pathname)) {
       const originUrl = new URL(request.url);
       originUrl.protocol = "http:";
-      originUrl.hostname = ORIGIN_IP;
+      originUrl.hostname = ORIGIN_HOST;
 
       const headers = new Headers(request.headers);
       headers.set("Host", PUBLIC_HOST);
