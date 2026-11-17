@@ -1,9 +1,12 @@
 /**
  * HTML landing from Worker assets; WordPress paths proxied to Cloudways.
- * Origin: Cloudways apps hostname (valid SSL, no grey-cloud subdomain needed).
+ *
+ * Proxies over HTTP to the origin IP with Host + X-Forwarded-Proto
+ * so Cloudways does not 301-loop and we avoid Error 526 (bad origin cert).
  */
 
-const ORIGIN_HOST = "wordpress-1485727-6510733.cloudwaysapps.com";
+const ORIGIN_IP = "164.92.207.251";
+const PUBLIC_HOST = "sbobetonline.co.uk";
 
 const WP_PREFIXES = [
   "/wp-admin",
@@ -39,12 +42,22 @@ export default {
 
     if (isWordPress(url.pathname)) {
       const originUrl = new URL(request.url);
-      originUrl.hostname = ORIGIN_HOST;
+      originUrl.protocol = "http:";
+      originUrl.hostname = ORIGIN_IP;
+
+      const headers = new Headers(request.headers);
+      headers.set("Host", PUBLIC_HOST);
+      headers.set("X-Forwarded-Proto", "https");
+      headers.set("X-Forwarded-Host", PUBLIC_HOST);
+      headers.delete("cf-connecting-ip");
+      headers.delete("cf-ray");
+      headers.delete("cf-visitor");
+      headers.delete("cf-ipcountry");
 
       return fetch(
         new Request(originUrl.toString(), {
           method: request.method,
-          headers: request.headers,
+          headers,
           body: request.body,
           redirect: "manual",
         })
